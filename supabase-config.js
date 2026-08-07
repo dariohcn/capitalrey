@@ -10,6 +10,6 @@
   - NO coloque aquí la service_role key.
 */
 window.CR_CONFIG = Object.freeze({
-  supabaseUrl: 'https://REEMPLACE-PROYECTO.supabase.co',
-  supabaseAnonKey: 'REEMPLACE_CON_SU_CLAVE_PUBLICABLE'
+  supabaseUrl: 'https://zljeevuqdfiurnwdcotu.supabase.co',
+  supabaseAnonKey: 'sb_publishable_PDJViLzyqcaj_M3RsjqyPA_5EmLnQvZ'
 });
