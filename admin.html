@@ -197,7 +197,7 @@
         <button class="primary-btn" id="loginButton" type="submit">Ingresar al panel</button>
         <div class="form-message" id="loginMessage"></div>
         <div class="config-box hidden" id="configBox">
-          No se pudo cargar la librería de Supabase. Recargue la página y verifique la conexión a Internet.
+          No se pudo cargar la configuración de Supabase. Recargue la página y verifique <strong>supabase-config.js</strong>.
         </div>
       </form>
     </div>
@@ -409,15 +409,14 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js?v=20260807-1524"></script>
   <script>
     (() => {
       'use strict';
 
-      const cfg=Object.freeze({
-        supabaseUrl:'https://zljeevuqdfiurnwdcotu.supabase.co',
-        supabaseAnonKey:'sb_publishable_PDJViLzyqcaj_M3RsjqyPA_5EmLnQvZ'
-      });
-      const configured=true;
+      const cfg=window.CR_CONFIG || {};
+      const configured=/^https:\/\/.+\.supabase\.co\/?$/i.test(cfg.supabaseUrl || '') &&
+        cfg.supabaseAnonKey && !/REEMPLACE|YOUR_|PEGUE/i.test(cfg.supabaseAnonKey);
       const loginView=document.getElementById('loginView');
       const appView=document.getElementById('appView');
       const configBox=document.getElementById('configBox');
@@ -813,11 +812,44 @@
         ctx.fillStyle='#c8a84f';ctx.fillRect(w-98,6,9,9);ctx.fillStyle='#5c6b6e';ctx.fillText('Detalles',w-84,14);
       }
 
+      async function loginDirect(email,password){
+        const response=await fetch(`${cfg.supabaseUrl}/auth/v1/token?grant_type=password`,{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'apikey':cfg.supabaseAnonKey,
+            'Authorization':`Bearer ${cfg.supabaseAnonKey}`
+          },
+          body:JSON.stringify({email,password})
+        });
+
+        const payload=await response.json().catch(()=>({}));
+
+        if(!response.ok){
+          const error=new Error(payload.msg || payload.message || payload.error_description || payload.error || `Error de autenticación (${response.status})`);
+          error.status=response.status;
+          error.code=payload.error_code || payload.code || '';
+          throw error;
+        }
+
+        if(!payload.access_token || !payload.refresh_token){
+          throw new Error('Supabase no devolvió una sesión válida.');
+        }
+
+        const {data,error}=await client.auth.setSession({
+          access_token:payload.access_token,
+          refresh_token:payload.refresh_token
+        });
+
+        if(error)throw error;
+        return data.session;
+      }
+
       loginForm.addEventListener('submit',async e=>{
         e.preventDefault();
         hideLoginMessage();
 
-        if(!window.supabase){
+        if(!configured || !window.supabase){
           configBox.classList.remove('hidden');
           return;
         }
@@ -826,46 +858,19 @@
         loginButton.textContent='Validando...';
 
         try{
-          const email=document.getElementById('loginEmail').value
-            .replace(/\s+/g,'')
-            .toLowerCase();
-
-          const password=document.getElementById('loginPassword').value.trim();
+          const email=document.getElementById('loginEmail').value.replace(/\s+/g,'').toLowerCase();
+          const password=document.getElementById('loginPassword').value;
 
           if(!email || !password){
             throw new Error('Ingrese el correo y la contraseña.');
           }
 
-          const {data,error}=await client.auth.signInWithPassword({
-            email:email,
-            password:password
-          });
-
-          if(error){
-            console.error('Supabase Auth:',{
-              message:error.message,
-              status:error.status,
-              code:error.code
-            });
-            throw error;
-          }
-
-          if(!data?.session?.user){
-            throw new Error('Supabase no devolvió una sesión válida.');
-          }
-
-          await afterLogin(data.session);
+          const currentSession=await loginDirect(email,password);
+          await afterLogin(currentSession);
 
         }catch(err){
-          const message=String(err?.message || '');
-
-          if(message.toLowerCase().includes('invalid login credentials')){
-            showLoginMessage(
-              'Supabase rechazó las credenciales del usuario. Verifique que este correo y su contraseña pertenezcan al proyecto conectado.'
-            );
-          }else{
-            showLoginMessage(message || 'No se pudo iniciar sesión.');
-          }
+          console.error('Supabase Auth:',err);
+          showLoginMessage(err.message || 'No se pudo iniciar sesión.');
         }finally{
           loginButton.disabled=false;
           loginButton.textContent='Ingresar al panel';
