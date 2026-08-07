@@ -1,13 +1,7 @@
 /*
   CAPITAL RAÍZ — Configuración pública de Supabase
-
-  Pegue aquí:
-  1) Project URL
-  2) Publishable key / anon public key
-
-  IMPORTANTE:
-  - La clave pública/publishable sí puede usarse en el navegador.
-  - NO coloque aquí la service_role key.
+  Esta clave publishable puede usarse en el navegador.
+  NO colocar service_role aquí.
 */
 window.CR_CONFIG = Object.freeze({
   supabaseUrl: "https://zljeevuqdfiurnwdcotu.supabase.co",
