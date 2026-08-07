@@ -4,6 +4,8 @@
   NO colocar service_role aquí.
 */
 window.CR_CONFIG = Object.freeze({
-  supabaseUrl: "https://zljeevuqdfiurnwdcotu.supabase.co",
-  supabaseAnonKey: "sb_publishable_PDJViLzyqcaj_M3RsjqyPA_5EmLnQvZ"
+  supabaseUrl: "https://dwtjpnldndndgzgwhlfb.supabase.co",
+  supabaseAnonKey: "sb_publishable_M55vN21ze7yH6rr8ZsfEKA_M0XjpKdH"
 });
+
+
